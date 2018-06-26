@@ -1,3 +1,4 @@
+
 struct stat;
 struct rtcdate;
 
@@ -23,7 +24,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int cantidad(void);
+int getpros(void); // DEFINICION DE GETPROS
+int settickets(int); // COLOCA TICKETS
+int statP(void);
 
 // ulib.c
 int stat(char*, struct stat*);

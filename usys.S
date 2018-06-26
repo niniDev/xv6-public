@@ -29,3 +29,6 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(getpros) // DEFINICION EN USYS
+SYSCALL(settickets) // COLOCA TICKETS
+SYSCALL(statP)

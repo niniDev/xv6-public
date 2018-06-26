@@ -103,7 +103,9 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
-extern int sys_cantidad(void);
+extern int sys_getpros(void);
+extern int sys_settickets(void);
+extern int sys_statP(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -127,7 +129,9 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_cantidad]   sys_cantidad,
+[SYS_getpros]   sys_getpros, // DEFINICION DE METODO EN LLAMADA DE SISTEMA
+[SYS_settickets]  sys_settickets, // PONE TICKETS
+[SYS_statP]   sys_statP
 };
 
 void

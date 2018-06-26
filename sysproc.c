@@ -7,6 +7,9 @@
 #include "mmu.h"
 #include "proc.h"
 
+extern const int total_tickets;
+
+
 int
 sys_fork(void)
 {
@@ -91,7 +94,34 @@ sys_uptime(void)
 }
 
 int
-sys_cantidad(void)
+sys_getpros(void)
 {
-  return NPROC;
+  return getpros(); // CONECTA SYS PROS CON GET PROS
+}
+
+
+//COLOCA TICKETS
+int
+sys_settickets(void)
+{
+struct proc *p;
+	int ticket_number;
+
+	if(argint(0, &ticket_number) < 0)
+        {
+ 		//VALOR POR DEFECTO
+		p->tickets = 100;
+        }
+	else
+	{
+		p->tickets = ticket_number;
+	}
+	return 0;
+}
+
+int
+sys_statP(void)
+{
+  return *statP();
+
 }
