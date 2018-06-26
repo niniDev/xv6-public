@@ -6,6 +6,8 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "rand.h"
+#include "rand.c"
 
 struct {
   struct spinlock lock;
@@ -88,7 +90,9 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-
+  
+  p->tickets = 10; // TICKETS IGUAL A 10
+  
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -200,6 +204,7 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -269,6 +274,8 @@ exit(void)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
+
+
 int
 wait(void)
 {
@@ -319,6 +326,7 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
 void
 scheduler(void)
 {
@@ -326,16 +334,43 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   
+  	// INICIA TICKETS CON 1
+        int count = 0;
+        long golden_ticket = 0;
+	int total_no_tickets = 0;
+
+
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
 
+    // SUPER TICKET GANADOR
+    golden_ticket = 0; 
+    count = 0;
+    total_no_tickets = 0;
+
+    //CALCULA TOTAL NUMERO DE TICKETS PARA PROCESOS RUNNABLE
+    total_no_tickets = lottery_Total();
+
+    //SACA UN TICKET ALEATORIO DEL TOTAL DE TICKETS DISPONIBLES
+    golden_ticket = random_at_most(total_no_tickets);
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      if(p->state != RUNNABLE)
+	continue;
+
+
+	if((count + p->tickets) < golden_ticket)
+	{
+		count += p->tickets;
+		continue;
+	}
+	
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -344,11 +379,13 @@ scheduler(void)
       p->state = RUNNING;
 
       swtch(&(c->scheduler), p->context);
+
       switchkvm();
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
+      break;
     }
     release(&ptable.lock);
 
@@ -523,7 +560,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
+    cprintf("%d %s %sc%d", p->pid, state, p->name, p->tickets);
     if(p->state == SLEEPING){
       getcallerpcs((uint*)p->context->ebp+2, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
@@ -531,4 +568,87 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+
+int
+getpros(void)
+{
+  struct proc *p; 
+  int contador = 0;
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (!(p->state == UNUSED)) { // SI EL PROCESO ES DISTINTO DE NO USADO
+      ++contador;
+    }
+  }
+  return contador;
+}
+
+
+int lottery_Total(void)
+{
+ struct proc *p;
+ int tickets_aggregate = 0;
+ for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+ {
+  if (p->state == RUNNABLE)
+  {
+
+  tickets_aggregate += p->tickets;
+  }
+ }
+ return tickets_aggregate;
+}
+
+
+//STATUS PROCESS
+int *
+statP(void)
+{
+  struct proc *p;
+  
+  //ALLOW SYSTEM INTERRUPTIONS
+  sti();
+
+  char *prosstate;
+  static int arrdir[2];
+  int count = 0;
+ 
+  //LOOP THROUGH PROCESS TABLE
+  acquire(&ptable.lock);
+  cprintf("Nombre \t Process id \t Estado \t Page Table  \t Process size \n");
+
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->state == UNUSED)
+      continue;
+    else
+    {
+      if (p->state == SLEEPING)
+        prosstate = "SLEEPING";
+      else if (p->state == RUNNING)
+        prosstate = "RUNNING";
+      else if (p->state == RUNNABLE)
+        prosstate = "RUNNABLE";
+      else if (p->state == ZOMBIE)
+        prosstate = "ZOMBIE";
+      else if (p->state == EMBRYO)
+	prosstate = "EMBRYO";
+      else
+        prosstate = "NULL";
+  
+    arrdir[count] = *p->pgdir;
+    cprintf("%s \t %d \t\t %s \t %p \t %d \n", p->name, p->pid, prosstate, p->pgdir, p->sz);
+    cprintf("Page Table en int: \t\t\t %d \n", arrdir[count]);
+    count++;
+    
+    }
+  }
+
+
+  //RELEASE TABLE
+  release(&ptable.lock);
+  //RETURN NUMBER OF PROCESS IN SYSCALL.H
+  return arrdir;
 }
