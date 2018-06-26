@@ -120,6 +120,9 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+int             getpros(void); // DEFINICION DEL PROCESO EN PROC.C DESDE DEFS.H
+int		lottery_Total(void);
+int* 		statP(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
