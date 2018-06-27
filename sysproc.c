@@ -122,6 +122,6 @@ struct proc *p;
 int
 sys_statP(void)
 {
-  return *statP();
+  return statP();
 
 }

@@ -603,21 +603,22 @@ int lottery_Total(void)
 
 
 //STATUS PROCESS
-int *
+int
 statP(void)
 {
   struct proc *p;
   
   //ALLOW SYSTEM INTERRUPTIONS
   sti();
-
+  
+  //GET STRING VALUES
   char *prosstate;
-  static int arrdir[2];
-  int count = 0;
+  //GET PHYS MEMORY LOCATION
+  int memphys = 0;
  
   //LOOP THROUGH PROCESS TABLE
   acquire(&ptable.lock);
-  cprintf("Nombre \t Process id \t Estado \t Page Table  \t Process size \n");
+  cprintf("Nombre \t Process id \t Estado \t Page Table \t Process size \t Mem Fisica\n");
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
@@ -636,19 +637,16 @@ statP(void)
       else if (p->state == EMBRYO)
 	prosstate = "EMBRYO";
       else
-        prosstate = "NULL";
-  
-    arrdir[count] = *p->pgdir;
-    cprintf("%s \t %d \t\t %s \t %p \t %d \n", p->name, p->pid, prosstate, p->pgdir, p->sz);
-    cprintf("Page Table en int: \t\t\t %d \n", arrdir[count]);
-    count++;
+        prosstate = "relleno para q corra, total de casos cubiertos";
     
+      //LINK VIRTUAL TO PHYS
+      memphys = V2P(*p->pgdir);
+      cprintf("%s \t %d \t\t %s \t %p \t %x \t\t %p\n", p->name, p->pid, prosstate, p->pgdir, p->sz, memphys);
     }
   }
-
 
   //RELEASE TABLE
   release(&ptable.lock);
   //RETURN NUMBER OF PROCESS IN SYSCALL.H
-  return arrdir;
+  return 24;
 }
